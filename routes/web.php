@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -20,3 +19,15 @@ Route::get('/', function () {
 Auth::routes();
 
 Route::get('/home', 'HomeController@index')->name('home');
+
+Route::get('/admin', 'Admin\AdminController@index')->name('admin');
+Route::get('/admin/create', 'Admin\AdminController@create')->name('createEmail');
+Route::post('/admin/store', 'Admin\AdminController@store');
+Route::get('/admin/{user}/show', 'Admin\AdminController@show');
+
+Route::get('/admin/{user}/edit', 'Admin\AdminController@edit');
+Route::post('/admin/{user}/update-user', 'Admin\AdminController@update');
+
+Route::get('/admin/{user}/delete', 'Admin\AdminController@destroy');
+
+Route::get('/admin/search', 'Admin\AdminController@search');
