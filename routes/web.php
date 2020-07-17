@@ -31,3 +31,7 @@ Route::post('/admin/{user}/update-user', 'Admin\AdminController@update');
 Route::get('/admin/{user}/delete', 'Admin\AdminController@destroy');
 
 Route::get('/admin/search', 'Admin\AdminController@search');
+
+Route::get('/admin/{user}/role/setAdmin', 'Admin\SuperAdminController@setAdmin');
+Route::get('/admin/{user}/role/setViewer', 'Admin\SuperAdminController@setViewer');
+Route::get('/admin/{user}/role/blocked', 'Admin\SuperAdminController@blockUser');

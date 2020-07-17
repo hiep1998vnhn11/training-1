@@ -4,7 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Spatie\Permission\Models\Permission;
 use App\User;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Traits\HasPermissions;
 
 class AdminController extends Controller
 {
@@ -16,7 +20,8 @@ class AdminController extends Controller
     public function index()
     {
         $users = User::all(); 
-        return view('admin.admin')->with('users', $users);
+        $currentUser = Auth::user();
+        return view('home')->with(['users'=> $users, 'currentUsers'=>$currentUser]);
     }
 
     /**
@@ -25,8 +30,18 @@ class AdminController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function create()
-    {
+    {   $currentUser = Auth::user();
+        $permissions = $currentUser->getPermissionsViaRoles();
+        $hasPermission = 0;
+        foreach($permissions as $permission){
+            if($permission->name == 'create user') $hasPermission = 1;
+        } 
+        if($hasPermission){
         return view('admin.create');
+        } else {
+            session()->flash('fail', 'Permission Denied!');
+            return redirect('/admin');
+        }
     }
 
     /**
@@ -54,13 +69,15 @@ class AdminController extends Controller
             'password_confirmation.required' => 'You did not input reset password!',
             'password_confirmation.same' => 'Please input reset password and password same!'
         ]);
-
+        
+        $role = Role::findByID(1);
         $user = new User;
         $user->name = $request->name;
         $user->email = $request->email;
         $user->password = bcrypt($request->password);
+        $user->assignRole($role);
         $user->save();
-
+            session()->flash('success', 'Create User successfully!');
         return redirect('/admin');
     }
 
@@ -82,8 +99,25 @@ class AdminController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function edit(User $user)
-    {
+    {   
+        if($user->email == 'superadmin@admin'){
+            session()->flash('fail', 'Can not Edit The Super-Admin!');
+            return redirect('/admin');
+       }
+        $currentUser = Auth::user();
+        
+        $permissions = $currentUser->getPermissionsViaRoles();
+        $hasPermission = 0;
+        if($currentUser == $user) $hasPermission = 1;
+        foreach($permissions as $permission){
+            if($permission->name == 'edit user') $hasPermission = 1;
+        } 
+        if($hasPermission){
         return view('admin.edit')->with('user', $user);
+        } else {
+            session()->flash('fail', 'Permission Denied!');
+            return redirect('/admin');
+        }
     }
 
     /**
@@ -95,6 +129,19 @@ class AdminController extends Controller
      */
     public function update(Request $request, User $user)
     {
+        $currentUser = Auth::user();
+        $permissions = $currentUser->getPermissionsViaRoles();
+        $hasPermission = 0;
+        if($currentUser == $user) $hasPermission = 1;
+       
+        foreach($permissions as $permission){
+            if($permission->name == 'edit user') $hasPermission = 1;
+        } 
+        if($hasPermission){
+            if($user->email == 'superadmin@admin'){
+                session()->flash('fail', 'Can not Edit The Super-Admin!');
+                return redirect('/admin');
+           }
         $this->validate(request(), [
             'name' => 'required|min:4',
             'email' => 'required|email',
@@ -119,6 +166,10 @@ class AdminController extends Controller
 
         $user->save();
         session()->flash('success', 'User was updated!');
+        
+        } else {
+            session()->flash('fail', 'Permission Denied!');
+        }
         return redirect('/admin');
     }
 
@@ -129,16 +180,32 @@ class AdminController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function destroy(User $user)
-    {
+    {   
+        if($user->email == 'superadmin@admin'){
+            session()->flash('fail', 'Can not Delete The Super-Admin!');
+            return redirect('/admin');
+        } 
+        $currentUser = Auth::user();
+        $permissions = $currentUser->getPermissionsViaRoles();
+        $hasPermission = 0;
+        foreach($permissions as $permission){
+            if($permission->name == 'delete user') $hasPermission = 1;
+        } 
+        if($hasPermission){
         $user->delete();
         session()->flash('success', 'User was Deleted!');
         return redirect('/admin');
+        } else {
+            session()->flash('fail', 'Permission Denied!');
+            return redirect('/admin');
+        }
+        
     }
 
     public function search(Request $request){
         $keyword = $request->get('keyword');
         $users = User::where('name', 'like', '%' .$keyword. '%')->orWhere('email', 'like', '%'.$keyword.'%')
             ->orWhere('id', 'like', '%'.$keyword.'%')->paginate(5);
-        return view('admin.admin')->with('users', $users);
+        return view('home')->with('users', $users);
     }
 }

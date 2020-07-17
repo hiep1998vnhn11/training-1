@@ -1,0 +1,17 @@
+{
+    "cSpell.words": [
+        "auth",
+        "authenticatable",
+        "hiep",
+        "hieptran",
+        "spat",
+        "spatie"
+    ],
+    "cSpell.ignoreWords": [
+        "get",
+        "get permissions via roles",
+        "permissions",
+        "roles",
+        "via"
+    ]
+}
